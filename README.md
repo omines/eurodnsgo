@@ -20,3 +20,9 @@ Or you can manually git clone the repository to
 ## Documentation
 
 TBD
+
+## Legal
+
+This software was developed for internal use at [Omines Full Service Internetbureau](https://www.omines.nl/)
+in Eindhoven, the Netherlands. It is shared with the general public under the permissive MIT license, without
+any guarantee of fitness for any particular purpose. Refer to the included `LICENSE` file for more details.
