@@ -2,6 +2,26 @@ package api
 
 import "encoding/xml"
 
+// RecordType represents the possible types of DNS records
+type RecordType string
+
+var (
+	// RecordTypeA represents an A-record
+	RecordTypeA RecordType = "A"
+	// RecordTypeAAAA represents an AAAA-record
+	RecordTypeAAAA RecordType = "AAAA"
+	// RecordTypeCNAME represents a CNAME-record
+	RecordTypeCNAME RecordType = "CNAME"
+	// RecordTypeMX represents an MX-record
+	RecordTypeMX RecordType = "MX"
+	// RecordTypeNS represents an NS-record
+	RecordTypeNS RecordType = "NS"
+	// RecordTypeTXT represents a TXT-record
+	RecordTypeTXT RecordType = "TXT"
+	// RecordTypeSRV represents an SRV-record
+	RecordTypeSRV RecordType = "SRV"
+)
+
 // Record represents an eurodnsgo Record object
 // See https://agent.api-eurodnsgo.com/doc/record/info
 type Record struct {

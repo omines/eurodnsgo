@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+// The delay between calls in milliseconds between scheduled
+// requests.
+const defaultCallDelay = 500
+
 // ClientConfig represents the data needed to connect to the API
 type ClientConfig struct {
 	// Set the Host to connect to to use the API
@@ -38,7 +42,7 @@ type client struct {
 	callSchedule chan scheduledCall
 }
 
-// Schedule schedules a request to be send to the eurodnsgo server
+// Schedule schedules a request to be send to the EuroDNS server
 func (c *client) Schedule(sr *SoapRequest) (chan []byte, error) {
 	r := make(chan []byte, 1)
 	// will be processed inside client::run
@@ -90,7 +94,7 @@ func NewClient(cc ClientConfig) (Client, error) {
 	}
 
 	// callDelay in milliseconds between scheduled calls
-	callDelay := 500
+	callDelay := defaultCallDelay
 	if cc.CallDelay > 0 {
 		callDelay = cc.CallDelay
 	}

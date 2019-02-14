@@ -23,34 +23,35 @@ const (
 
 // getSOAPArg returns XML representing given input argument as SOAP parameters
 // in combination with getSOAPArgs you can build SOAP body
-func getSOAPArg(entity, name string, input interface{}) (output string) {
+func getSOAPArg(p Param) (output string) {
+	entity := p.Entity()
+	name := p.Key()
+	input := p.Value()
+
 	ns := entity + ":" + name
+	output = fmt.Sprintf(`<%s>`, ns)
 	switch input.(type) {
-	case []string:
-		i := input.([]string)
-		output = fmt.Sprintf(`<%s>`, ns)
-		for _, x := range i {
-			output = output + fmt.Sprintf(`<item xsi:type="xsd:string">%s</item>`, x)
-		}
-		output = output + fmt.Sprintf(`<%s>`, ns)
 	case string:
-		output = fmt.Sprintf(`<%s>%s</%s>`, ns, input, ns)
+		output += input.(string)
 	case int, int32, int64:
-		output = fmt.Sprintf(`<%s>%d</%s>`, ns, input, ns)
+		output += fmt.Sprintf(`%d`, input)
+	case ParamsContainer:
+		output += string(getSOAPArgs(input.(ParamsContainer)))
 	}
+	output += fmt.Sprintf(`</%s>`, ns)
 
 	return
 }
 
 // getSOAPArgs returns XML representing given name and argument as SOAP body
-func getSOAPArgs(entity string, method string, input ...string) []byte {
+func getSOAPArgs(pc ParamsContainer) []byte {
 	var buf bytes.Buffer
 
-	buf.WriteString(fmt.Sprintf("<%s:%s>", entity, method))
-	for _, x := range input {
-		buf.WriteString(x)
+	for _, p := range pc.Params() {
+		buf.WriteString(fmt.Sprintf("<%s:%s>", p.Entity(), p.Key()))
+		buf.WriteString(getSOAPArg(p))
+		buf.WriteString(fmt.Sprintf("</%s:%s>", p.Entity(), p.Key()))
 	}
-	buf.WriteString(fmt.Sprintf("</%s:%s>", entity, method))
 
 	return buf.Bytes()
 }
@@ -60,96 +61,97 @@ type paramsEncoder interface {
 	EncodeArgs(string) string
 }
 
+type Param interface {
+	Entity() string
+	Key() string
+	Value() interface{}
+}
+
+func NewParam(s, k string, v interface{}) Param {
+	return soapParam{s, k, v}
+}
+
+type soapParam struct {
+	entity string
+	key    string
+	value  interface{}
+}
+
+func (s soapParam) Entity() string {
+	return s.entity
+}
+
+func (s soapParam) Key() string {
+	return s.key
+}
+
+func (s soapParam) Value() interface{} {
+	return s.value
+}
+
 // ParamsContainer is the interface a type should implement to be able to hold
 // SOAP parameters
 type ParamsContainer interface {
 	Len() int
-	Add(string, interface{})
+	AddParam(Param)
+	Params() []Param
 }
 
 type soapParams struct {
-	keys   []string
-	values []interface{}
+	params   []Param
+	children []ParamsContainer
 }
 
 // Add adds parameter data to the end of this SoapParams
-func (s *soapParams) Add(k string, v interface{}) {
-	if s.keys == nil {
-		s.keys = make([]string, 0)
+func (s *soapParams) AddParam(p Param) {
+	if s.params == nil {
+		s.params = make([]Param, 0)
 	}
-
-	if s.values == nil {
-		s.values = make([]interface{}, 0)
-	}
-
-	s.keys = append(s.keys, k)
-	s.values = append(s.values, v)
+	s.params = append(s.params, p)
 }
 
 // Len returns amount of parameters set in this SoapParams
 func (s soapParams) Len() int {
-	return len(s.keys)
+	return len(s.params)
+}
+
+func (s soapParams) Params() []Param {
+	return s.params
 }
 
 // The SoapRequest contains all needed data to perform a request at the
 // eurodnsgo server.
 type SoapRequest struct {
-	Method string
-	Entity string
-	Result interface{}
-
-	args   []string
-	params *soapParams
+	soapParams
+	Namespace string
+	Method    string
+	Result    interface{}
 }
 
-// AddArgument adds an argument to the SoapRequest; the arguments ared used to
-// fill the XML request body as well as to create a valid signature for the
-// request
-func (sr *SoapRequest) AddArgument(entity, key string, value interface{}) {
-	if sr.params == nil {
-		sr.params = &soapParams{}
-	}
+func (sr *SoapRequest) Entity() string {
+	return sr.Namespace
+}
+func (sr *SoapRequest) Key() string {
+	return sr.Method
+}
+func (sr *SoapRequest) Value() interface{} {
+	return sr.soapParams
+}
 
-	// check if value implements paramsEncoder
-	if pe, ok := value.(paramsEncoder); ok {
-		sr.args = append(sr.args, pe.EncodeArgs(key))
-		pe.EncodeParams(sr.params)
-		return
-	}
-
-	switch value.(type) {
-	case []string:
-		sr.params.Add(fmt.Sprintf("%d", sr.params.Len()), value)
-		sr.args = append(sr.args, getSOAPArg(entity, key, value))
-	case string:
-		sr.params.Add(fmt.Sprintf("%d", sr.params.Len()), value)
-		sr.args = append(sr.args, getSOAPArg(entity, key, value.(string)))
-	case int, int8, int16, int32, int64:
-		sr.params.Add(fmt.Sprintf("%d", sr.params.Len()), value)
-		sr.args = append(sr.args, getSOAPArg(entity, key, fmt.Sprintf("%d", value)))
-	default:
-		// check if value implements the String interface
-		if str, ok := value.(fmt.Stringer); ok {
-			sr.params.Add(fmt.Sprintf("%d", sr.params.Len()), str.String())
-			sr.args = append(sr.args, getSOAPArg(entity, key, str.String()))
-		}
+// NewSoapRequest creates a new SoapRequest instance
+func NewSoapRequest(domain, method string, result interface{}) *SoapRequest {
+	return &SoapRequest{
+		Namespace: domain,
+		Method:    method,
+		Result:    result,
 	}
 }
 
 func (sr *SoapRequest) getEnvelope() string {
-	t := strings.Replace(soapEnvelopeFixture, "{ENTITY}", sr.Entity, -1)
+	t := strings.Replace(soapEnvelopeFixture, "{ENTITY}", sr.Entity(), -1)
 	t = strings.Replace(t, "{METHOD}", sr.Method, -1)
-	t = fmt.Sprintf(t, getSOAPArgs(sr.Entity, sr.Method, sr.args...))
+	t = fmt.Sprintf(t, getSOAPArg(sr))
 	return "xml=" + url.QueryEscape(url.QueryEscape(t))
-}
-
-// NewSoapRequest creates a new SoapRequest instace
-func NewSoapRequest(domain, method string, result interface{}) *SoapRequest {
-	return &SoapRequest{
-		Entity: domain,
-		Method: method,
-		Result: result,
-	}
 }
 
 type soapClient struct {

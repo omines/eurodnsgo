@@ -7,9 +7,9 @@ import (
 func TestSOAPEnvelope(t *testing.T) {
 	var v interface{}
 	sr := SoapRequest{
-		Entity: "entity",
-		Method: "test",
-		Result: &v,
+		Namespace: "entity",
+		Method:    "test",
+		Result:    &v,
 	}
 
 	if e := sr.getEnvelope(); len(e) == 0 {
