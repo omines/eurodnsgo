@@ -74,7 +74,7 @@ func (c *client) run() {
 	}
 }
 
-// NewClient returns a new client with the appropiate credentials
+// NewClient returns a new client with the appropriate credentials
 // setup.
 func NewClient(cc ClientConfig) (Client, error) {
 	if len(cc.Username) == 0 {
