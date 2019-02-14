@@ -1,0 +1,13 @@
+language: go
+
+go:
+  - tip
+
+install:
+  - export GOPATH="$HOME/gopath"
+  - mkdir -p "$GOPATH/src/github.com/omines"
+  - mv "$TRAVIS_BUILD_DIR" "$GOPATH/src/github.com/omines/eurodnsgo"
+  - go get -v -t -d github.com/omines/eurodnsgo/...
+
+script:
+  - go test -v github.com/omines/eurodnsgo/...
