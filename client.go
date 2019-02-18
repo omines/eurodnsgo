@@ -10,6 +10,10 @@ import (
 // requests.
 const defaultCallDelay = 500
 
+// ClientTestHostname will be used inside `func (c *client) IsTest() bool`
+// to determine if the client can safely be used in unit tests.
+const ClientTestHostname = "eurodns_test"
+
 // ClientConfig represents the data needed to connect to the API
 type ClientConfig struct {
 	// Set the Host to connect to to use the API
@@ -54,7 +58,7 @@ func (c *client) Schedule(sr *SoapRequest) (chan []byte, error) {
 // of Schedule is advised to prevent flooding the server with
 // requests
 func (c *client) Call(sr *SoapRequest) error {
-	_, err := c.sc.call(sr)
+	_, err := c.makeCall(sr)
 	return err
 }
 
@@ -62,7 +66,7 @@ func (c *client) run() {
 	for {
 		select {
 		case sc := <-c.callSchedule:
-			b, err := c.sc.call(sc.sr)
+			b, err := c.makeCall(sc.sr)
 			if err != nil {
 				log.Println("Error calling API")
 				log.Println(err)
@@ -76,6 +80,10 @@ func (c *client) run() {
 			time.Sleep(50 * time.Millisecond)
 		}
 	}
+}
+
+func (c *client) makeCall(sr *SoapRequest) ([]byte, error) {
+	return c.sc.call(sr)
 }
 
 // NewClient returns a new client with the appropriate credentials

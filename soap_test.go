@@ -23,9 +23,20 @@ func TestSoapRequest(t *testing.T) {
 	}
 }
 
+func TestSoapParams(t *testing.T) {
+	sr := soapParams{}
+	var v interface{} = &sr
+	var ok bool
+
+	v, ok = v.(ParamsContainer)
+	if v == nil || !ok {
+		t.Fatal("soapParams should implement ParamContainer interface")
+	}
+}
+
 func TestSOAPEnvelope(t *testing.T) {
 	var v interface{}
-	sr := SoapRequest{
+	sr := &SoapRequest{
 		Namespace: "entity",
 		Method:    "test",
 		Result:    &v,
@@ -34,10 +45,9 @@ func TestSOAPEnvelope(t *testing.T) {
 	if e := sr.getEnvelope(); len(e) == 0 {
 		t.Fatal("envelope of a soap request should return content")
 	}
-	// TODO extend tests
 }
 
-var addParamResult = `<?xml version="1.0" encoding="UTF-8"?>
+var addParamResultXML = `<?xml version="1.0" encoding="UTF-8"?>
 <request xmlns:entity="http://www.eurodns.com/entity">
 	<entity:test><test:a id="2"name="name">12</test:a></entity:test>
 </request>
@@ -45,7 +55,7 @@ var addParamResult = `<?xml version="1.0" encoding="UTF-8"?>
 
 func TestAddParam(t *testing.T) {
 	var v interface{}
-	sr := SoapRequest{
+	sr := &SoapRequest{
 		Namespace: "entity",
 		Method:    "test",
 		Result:    &v,
@@ -53,11 +63,11 @@ func TestAddParam(t *testing.T) {
 	sr.AddParam(NewParam("test", "a", 12, Attr{"id", 2}, Attr{"name", "name"}))
 
 	var e string
-	if e = sr.prepareContent(); len(e) == 0 {
+	if e = sr.PrepareContent(); len(e) == 0 {
 		t.Fatal("envelope of a soap request should return content")
 	}
 
-	if e != addParamResult {
-		t.Fatalf("expect prepareContent to match our expected result, received \"%s\"", e)
+	if e != addParamResultXML {
+		t.Fatalf("expect PrepareContent output to match our expected result, received \"%s\"", e)
 	}
 }

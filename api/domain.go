@@ -22,8 +22,8 @@ var (
 	RecordTypeSRV RecordType = "SRV"
 )
 
-// Record represents an eurodnsgo Record object
-// See https://agent.api-eurodnsgo.com/doc/record/info
+// Record represents an EuroDNS Record object
+// See https://agent.api-eurodns.com/doc/record/info
 type Record struct {
 	XMLName    xml.Name `xml:"record,omitempty"`
 	ID         int      `xml:"id,attr"`
@@ -38,8 +38,8 @@ type Record struct {
 	Type       string   `xml:"record type,omitempty"`
 }
 
-// Zone represents an eurodnsgo Zone object
-// See https://agent.api-eurodnsgo.com/doc/zone/info
+// Zone represents an EuroDNS Zone object
+// See https://agent.api-eurodns.com/doc/zone/info
 type Zone struct {
 	XMLName xml.Name  `xml:"zone,omitempty"`
 	Name    string    `xml:"zone name"`

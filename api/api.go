@@ -2,6 +2,8 @@ package api
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/omines/eurodnsgo"
 )
@@ -17,6 +19,61 @@ func schedule(c eurodnsgo.Client, sr *eurodnsgo.SoapRequest) error {
 	_ = <-ch
 
 	return nil
+}
+
+func parseTag(t reflect.StructTag) (string, string) {
+	st := string(t)
+	if !strings.Contains(st, "xml:") {
+		return "", ""
+	}
+
+	// get the part from the first " to the first ,
+	s := strings.Index(st, "\"")
+	if s == -1 {
+		return "", ""
+	}
+	e := strings.Index(st, ",")
+	if e == -1 {
+		return "", ""
+	}
+	substr := st[s+1 : e]
+
+	parts := strings.Split(substr, " ")
+	if len(parts) != 2 {
+		return "", ""
+	}
+
+	return parts[0], parts[1]
+}
+
+func xmlEncode(val interface{}) ([]byte, error) {
+	if reflect.ValueOf(val).Kind() != reflect.Struct {
+		return nil, fmt.Errorf("unsupported type %s", reflect.ValueOf(val).Kind())
+	}
+
+	var res string
+	v := reflect.ValueOf(val)
+	e := reflect.TypeOf(val)
+	for i := 0; i < v.NumField(); i++ {
+		ns, name := parseTag(e.Field(i).Tag)
+		if ns == "" || name == "" {
+			continue
+		}
+		tag := fmt.Sprintf("%s:%s", ns, name)
+		switch v.Field(i).Kind() {
+		case reflect.Int:
+			res += fmt.Sprintf("<%s>%d</%s>", tag, v.Field(i).Int(), tag)
+		case reflect.String:
+			res += fmt.Sprintf("<%s>%s</%s>", tag, v.Field(i).String(), tag)
+		case reflect.Struct:
+			sub, err := xmlEncode(v)
+			if err != nil {
+				return nil, err
+			}
+			res += string(sub)
+		}
+	}
+	return []byte(res), nil
 }
 
 // MutationType defines update methods to be used
@@ -77,15 +134,32 @@ func GetZoneInfo(c eurodnsgo.Client, domain string) (Zone, error) {
 	return v.Zone, err
 }
 
+func addRecordRequest(v interface{}, z Zone, r Record) (*eurodnsgo.SoapRequest, error) {
+	sr := eurodnsgo.NewSoapRequest("zone", "update", &v)
+
+	rr, err := xmlEncode(r)
+
+	zoneRecord := eurodnsgo.NewParam("zone", "record", rr)
+	zoneAdd := eurodnsgo.NewParam("zone", "add", zoneRecord)
+	zoneRecords := eurodnsgo.NewParam("zone", "records", zoneAdd)
+	zoneName := eurodnsgo.NewParam("zone", "name", z.Name)
+
+	sr.AddParam(zoneName)
+	sr.AddParam(zoneRecords)
+	return sr, err
+}
+
 // ZoneRecordAdd adds a new Record object to a Zone
 func ZoneRecordAdd(c eurodnsgo.Client, z Zone, r Record) error {
 	var v interface{}
 
-	sr := eurodnsgo.NewSoapRequest("zone", "update", &v)
+	rr, err := addRecordRequest(v, z, r)
+	if err != nil {
+		return err
+	}
+	err = schedule(c, rr)
 
-	fmt.Println(sr)
-
-	return nil
+	return err
 }
 
 // ZoneRecordChange changes a Record object inside a Zone

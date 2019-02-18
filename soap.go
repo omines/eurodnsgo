@@ -26,6 +26,12 @@ type paramsEncoder interface {
 	EncodeArgs(string) string
 }
 
+// XMLable is a small interface the records can implement to be
+// recognizable as application bound.
+type XMLable interface {
+	ToXML() string
+}
+
 // Attr is a simple key/value store
 type Attr struct {
 	Key   string
@@ -37,6 +43,7 @@ type Attr struct {
 type Param interface {
 	Entity() string
 	Key() string
+
 	Value() interface{}
 	Attrs() []Attr
 }
@@ -44,7 +51,14 @@ type Param interface {
 // NewParam creates a new Param interface to be used as parameter
 // for the API.
 func NewParam(s, k string, v interface{}, attrs ...Attr) Param {
-	return soapParam{s, k, v, attrs}
+	return &soapParam{s, k, v, attrs}
+}
+
+// SoapParamContainer is an struct to expose some methods to the
+// outside. TODO should be better implemented inside the interfaces
+// so pointer receivers don't cause trouble anymore.
+type SoapParamContainer struct {
+	soapParams
 }
 
 type soapParam struct {
@@ -82,11 +96,10 @@ type ParamsContainer interface {
 }
 
 type soapParams struct {
-	params   []Param
-	children []ParamsContainer
+	params []Param
 }
 
-// Add adds parameter data to the end of this SoapParams
+// AddParam adds parameter data to the end of this SoapParams
 func (s *soapParams) AddParam(p Param) {
 	if s.params == nil {
 		s.params = make([]Param, 0)
@@ -111,6 +124,7 @@ type SoapRequest struct {
 	Namespace string
 	Method    string
 	Result    interface{}
+	IsTest    bool // default false
 }
 
 // Entity is here to provide Param interface
@@ -143,7 +157,10 @@ func NewSoapRequest(domain, method string, result interface{}) *SoapRequest {
 	}
 }
 
-func (sr *SoapRequest) prepareContent() string {
+// PrepareContent returns the unencoded xml payload which will be send based on the
+// SoapRequest params. This function can be used to validate generated XML against
+// the EuroDNS documentation in API tests.
+func (sr *SoapRequest) PrepareContent() string {
 	t := strings.Replace(soapEnvelopeFixture, "{ENTITY}", sr.Entity(), -1)
 	t = strings.Replace(t, "{METHOD}", sr.Method, -1)
 	t = fmt.Sprintf(t, getSOAPArg(sr))
@@ -151,7 +168,7 @@ func (sr *SoapRequest) prepareContent() string {
 }
 
 func (sr *SoapRequest) getEnvelope() string {
-	return "xml=" + url.QueryEscape(url.QueryEscape(sr.prepareContent()))
+	return "xml=" + url.QueryEscape(url.QueryEscape(sr.PrepareContent()))
 }
 
 type soapClient struct {
@@ -252,12 +269,18 @@ func getSOAPArg(p Param) (output string) {
 		output = fmt.Sprintf(`<%s %s>`, ns, attr)
 	}
 	switch input.(type) {
+	case []byte:
+		output += string(input.([]byte))
 	case string:
 		output += input.(string)
 	case int, int32, int64:
 		output += fmt.Sprintf(`%d`, input)
+	case Param:
+		output += string(getSOAPArg(input.(Param)))
 	case ParamsContainer:
 		output += string(getSOAPArgs(input.(ParamsContainer)))
+	case XMLable:
+		output += string(input.(XMLable).ToXML())
 	}
 	output += fmt.Sprintf(`</%s>`, ns)
 
