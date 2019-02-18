@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"unicode"
@@ -50,12 +49,16 @@ func TestRecordInfoParams(t *testing.T) {
 }
 
 func TestAddRecordRequest(t *testing.T) {
+	e := `<?xml version="1.0" encoding="UTF-8"?>
+<request xmlns:zone="http://www.eurodns.com/zone">
+	<zone:update><zone:name>zone</zone:name><zone:records><zone:add><zone:record><record:data></record:data><record:expire>0</record:expire><record:host></record:host><record:priority>0</record:priority><record:refresh>0</record:refresh><record:resp_person></record:resp_person><record:retry>0</record:retry><record:ttl>0</record:ttl><record:type>A</record:type></zone:record></zone:add></zone:records></zone:update>
+</request>`
 	var v interface{}
 	r := Record{
 		ID:   1234,
 		Type: string(RecordTypeA),
 	}
-	sr, _ := addRecordRequest(v, Zone{}, r)
+	sr, _ := addRecordRequest(v, Zone{Name: "zone"}, r)
 
-	fmt.Println(sr.PrepareContent()) // TODO finish
+	testParams(t, sr, e)
 }
