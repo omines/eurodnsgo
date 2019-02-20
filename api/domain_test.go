@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var zoneListXml = `
+var zoneListXML = `
 <resData>
 	<zone:list>
 		<zone:name>example1.org</zone:name>
@@ -17,7 +17,7 @@ var zoneListXml = `
 
 func TestUnmarshalZoneList(t *testing.T) {
 	var zl zoneList
-	if err := xml.Unmarshal([]byte(zoneListXml), &zl); err != nil {
+	if err := xml.Unmarshal([]byte(zoneListXML), &zl); err != nil {
 		t.Fatal(err)
 	}
 

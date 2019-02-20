@@ -162,12 +162,53 @@ func ZoneRecordAdd(c eurodnsgo.Client, z Zone, r Record) error {
 	return err
 }
 
+func changeRecordRequest(v interface{}, z Zone, r Record) (*eurodnsgo.SoapRequest, error) {
+	sr := eurodnsgo.NewSoapRequest("zone", "update", &v)
+
+	rr, err := xmlEncode(r)
+
+	zoneRecord := eurodnsgo.NewParam("zone", "record", rr, eurodnsgo.Attr{Key: "id", Value: r.ID})
+	zoneChange := eurodnsgo.NewParam("zone", "change", zoneRecord)
+	zoneRecords := eurodnsgo.NewParam("zone", "records", zoneChange)
+	zoneName := eurodnsgo.NewParam("zone", "name", z.Name)
+
+	sr.AddParam(zoneName)
+	sr.AddParam(zoneRecords)
+	return sr, err
+}
+
 // ZoneRecordChange changes a Record object inside a Zone
 func ZoneRecordChange(c eurodnsgo.Client, z Zone, r Record) error {
-	return nil
+	var v interface{}
+
+	cr, err := addRecordRequest(v, z, r)
+	if err != nil {
+		return err
+	}
+	err = schedule(c, cr)
+
+	return err
+}
+
+func deleteRecordRequest(v interface{}, z Zone, r Record) *eurodnsgo.SoapRequest {
+	sr := eurodnsgo.NewSoapRequest("zone", "update", &v)
+
+	zoneRecord := eurodnsgo.NewParam("zone", "record", nil, eurodnsgo.Attr{Key: "id", Value: r.ID})
+	zoneRemove := eurodnsgo.NewParam("zone", "remove", zoneRecord)
+	zoneRecords := eurodnsgo.NewParam("zone", "records", zoneRemove)
+	zoneName := eurodnsgo.NewParam("zone", "name", z.Name)
+
+	sr.AddParam(zoneName)
+	sr.AddParam(zoneRecords)
+	return sr
 }
 
 // ZoneRecordDelete deletes a Record object from a Zone
 func ZoneRecordDelete(c eurodnsgo.Client, z Zone, r Record) error {
-	return nil
+	var v interface{}
+
+	dr := deleteRecordRequest(v, z, r)
+	err := schedule(c, dr)
+
+	return err
 }

@@ -62,3 +62,33 @@ func TestAddRecordRequest(t *testing.T) {
 
 	testParams(t, sr, e)
 }
+
+func TestChangeRecordRequest(t *testing.T) {
+	e := `<?xml version="1.0" encoding="UTF-8"?>
+<request xmlns:zone="http://www.eurodns.com/zone">
+	<zone:update><zone:name>zone</zone:name><zone:records><zone:change><zone:record id="1234"><record:data></record:data><record:expire>0</record:expire><record:host></record:host><record:priority>0</record:priority><record:refresh>0</record:refresh><record:resp_person></record:resp_person><record:retry>0</record:retry><record:ttl>0</record:ttl><record:type>A</record:type></zone:record></zone:change></zone:records></zone:update>
+</request>`
+	var v interface{}
+	r := Record{
+		ID:   1234,
+		Type: string(RecordTypeA),
+	}
+	sr, _ := changeRecordRequest(v, Zone{Name: "zone"}, r)
+
+	testParams(t, sr, e)
+}
+
+func TestDeleteRecordRequest(t *testing.T) {
+	e := `<?xml version="1.0" encoding="UTF-8"?>
+<request xmlns:zone="http://www.eurodns.com/zone">
+	<zone:update><zone:name>zone</zone:name><zone:records><zone:remove><zone:record id="1234"></zone:record></zone:remove></zone:records></zone:update>
+</request>`
+	var v interface{}
+	r := Record{
+		ID:   1234,
+		Type: string(RecordTypeA),
+	}
+	sr := deleteRecordRequest(v, Zone{Name: "zone"}, r)
+
+	testParams(t, sr, e)
+}
