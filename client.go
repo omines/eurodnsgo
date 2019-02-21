@@ -10,10 +10,6 @@ import (
 // requests.
 const defaultCallDelay = 500
 
-// ClientTestHostname will be used inside `func (c *client) IsTest() bool`
-// to determine if the client can safely be used in unit tests.
-const ClientTestHostname = "eurodns_test"
-
 // ClientConfig represents the data needed to connect to the API
 type ClientConfig struct {
 	// Set the Host to connect to to use the API
