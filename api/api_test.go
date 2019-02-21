@@ -56,7 +56,7 @@ func TestAddRecordRequest(t *testing.T) {
 	var v interface{}
 	r := Record{
 		ID:   1234,
-		Type: string(RecordTypeA),
+		Type: RecordTypeA,
 	}
 	sr, _ := addRecordRequest(v, Zone{Name: "zone"}, r)
 
@@ -71,7 +71,7 @@ func TestChangeRecordRequest(t *testing.T) {
 	var v interface{}
 	r := Record{
 		ID:   1234,
-		Type: string(RecordTypeA),
+		Type: RecordTypeA,
 	}
 	sr, _ := changeRecordRequest(v, Zone{Name: "zone"}, r)
 
@@ -86,7 +86,7 @@ func TestDeleteRecordRequest(t *testing.T) {
 	var v interface{}
 	r := Record{
 		ID:   1234,
-		Type: string(RecordTypeA),
+		Type: RecordTypeA,
 	}
 	sr := deleteRecordRequest(v, Zone{Name: "zone"}, r)
 

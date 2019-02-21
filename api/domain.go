@@ -25,17 +25,17 @@ var (
 // Record represents an EuroDNS Record object
 // See https://agent.api-eurodns.com/doc/record/info
 type Record struct {
-	XMLName    xml.Name `xml:"record,omitempty"`
-	ID         int      `xml:"id,attr"`
-	Data       string   `xml:"record data,omitempty"`
-	Expire     int      `xml:"record expire,omitempty"`
-	Host       string   `xml:"record host,omitempty"`
-	Priority   int      `xml:"record priority,omitempty"`
-	Refresh    int      `xml:"record refresh,omitempty"`
-	RespPerson string   `xml:"record resp_person,omitempty"`
-	Retry      int      `xml:"record retry,omitempty"`
-	TTL        int      `xml:"record ttl,omitempty"`
-	Type       string   `xml:"record type,omitempty"`
+	XMLName    xml.Name   `xml:"record,omitempty"`
+	ID         int        `xml:"id,attr"`
+	Data       string     `xml:"record data,omitempty"`
+	Expire     int        `xml:"record expire,omitempty"`
+	Host       string     `xml:"record host,omitempty"`
+	Priority   int        `xml:"record priority,omitempty"`
+	Refresh    int        `xml:"record refresh,omitempty"`
+	RespPerson string     `xml:"record resp_person,omitempty"`
+	Retry      int        `xml:"record retry,omitempty"`
+	TTL        int        `xml:"record ttl,omitempty"`
+	Type       RecordType `xml:"record type,omitempty"`
 }
 
 // Zone represents an EuroDNS Zone object
