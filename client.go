@@ -19,7 +19,7 @@ type ClientConfig struct {
 	// Set the Password to connect to the API
 	Password string
 	// The CallDelay regulates the schedule iteration speed
-	// in milliseconds. Defaults to 501 milliseconds.
+	// in milliseconds. Defaults to 500 milliseconds.
 	CallDelay int
 }
 
