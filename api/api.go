@@ -181,7 +181,7 @@ func changeRecordRequest(v interface{}, z Zone, r Record) (*eurodnsgo.SoapReques
 func ZoneRecordChange(c eurodnsgo.Client, z Zone, r Record) error {
 	var v interface{}
 
-	cr, err := addRecordRequest(v, z, r)
+	cr, err := changeRecordRequest(v, z, r)
 	if err != nil {
 		return err
 	}
