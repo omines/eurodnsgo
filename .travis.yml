@@ -1,7 +1,10 @@
 `language: go
 
 go:
-  - tip
+  - 1.12.x
+
+git:
+  depth: 1
 
 install:
   - export GOPATH="$HOME/gopath"
@@ -9,3 +12,7 @@ install:
 
 script:
   - go test -v -cover github.com/omines/eurodnsgo/...
+
+# Small experiment with travis behavior
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
