@@ -2,6 +2,7 @@ package eurodnsgo
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/xml"
 	"errors"
@@ -196,9 +197,9 @@ type soapEnvelope struct {
 	InnerXML []byte `xml:",innerxml"`
 }
 
-func (s *soapClient) call(req *SoapRequest) ([]byte, error) {
+func (s *soapClient) call(ctx context.Context, req *SoapRequest) ([]byte, error) {
 	// get http request for soap request
-	httpReq, err := s.httpReqForSoapRequest(*req)
+	httpReq, err := s.httpReqForSoapRequest(ctx, *req)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +227,7 @@ func (s *soapClient) call(req *SoapRequest) ([]byte, error) {
 
 // httpReqForSoapRequest creates the HTTP request for a specific SoapRequest
 // this includes setting the URL, POST body and cookies
-func (s soapClient) httpReqForSoapRequest(req SoapRequest) (*http.Request, error) {
+func (s soapClient) httpReqForSoapRequest(ctx context.Context, req SoapRequest) (*http.Request, error) {
 	url := fmt.Sprintf("https://%s", s.host)
 
 	b := bytes.NewBuffer([]byte(req.getEnvelope()))
@@ -234,6 +235,7 @@ func (s soapClient) httpReqForSoapRequest(req SoapRequest) (*http.Request, error
 	if err != nil {
 		return nil, err
 	}
+	httpReq = httpReq.WithContext(ctx)
 
 	authStr := base64.StdEncoding.EncodeToString([]byte(s.login + ":" + s.password))
 	httpReq.Header.Add("Authorization", "Basic "+authStr)

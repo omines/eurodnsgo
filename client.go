@@ -1,6 +1,7 @@
 package eurodnsgo
 
 import (
+	"context"
 	"errors"
 	"log"
 	"time"
@@ -26,14 +27,16 @@ type ClientConfig struct {
 // Client defines the functions needed to do a remote request
 type Client interface {
 	// Schedule schedules a request to be send to the XML server
-	Schedule(*SoapRequest) (chan []byte, error)
+	Schedule(context.Context, *SoapRequest) (chan []byte, error)
 	// Call performs a request to the XML server
-	Call(*SoapRequest) error
+	Call(context.Context, *SoapRequest) error
 }
 
 type scheduledCall struct {
 	sr     *SoapRequest
 	result chan []byte
+	// Context is required in this struct since it is passed through a channel
+	ctx context.Context
 }
 
 type client struct {
@@ -43,18 +46,18 @@ type client struct {
 }
 
 // Schedule schedules a request to be send to the EuroDNS server
-func (c *client) Schedule(sr *SoapRequest) (chan []byte, error) {
+func (c *client) Schedule(ctx context.Context, sr *SoapRequest) (chan []byte, error) {
 	r := make(chan []byte, 1)
 	// will be processed inside client::run
-	c.callSchedule <- scheduledCall{sr, r}
+	c.callSchedule <- scheduledCall{sr, r, ctx}
 	return r, nil
 }
 
 // Call performs a request at the EuroDNS server directly. The use
 // of Schedule is advised to prevent flooding the server with
 // requests
-func (c *client) Call(sr *SoapRequest) error {
-	_, err := c.makeCall(sr)
+func (c *client) Call(ctx context.Context, sr *SoapRequest) error {
+	_, err := c.makeCall(ctx, sr)
 	return err
 }
 
@@ -62,7 +65,7 @@ func (c *client) run() {
 	for {
 		select {
 		case sc := <-c.callSchedule:
-			b, err := c.makeCall(sc.sr)
+			b, err := c.makeCall(sc.ctx, sc.sr)
 			if err != nil {
 				log.Println("Error calling API")
 				log.Println(err)
@@ -78,8 +81,8 @@ func (c *client) run() {
 	}
 }
 
-func (c *client) makeCall(sr *SoapRequest) ([]byte, error) {
-	return c.sc.call(sr)
+func (c *client) makeCall(ctx context.Context, sr *SoapRequest) ([]byte, error) {
+	return c.sc.call(ctx, sr)
 }
 
 // NewClient returns a new client with the appropriate credentials
