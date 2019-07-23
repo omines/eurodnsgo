@@ -1,4 +1,4 @@
-language: go
+`language: go
 
 go:
   - tip
@@ -8,4 +8,4 @@ install:
   - go get -v -t -d github.com/omines/eurodnsgo/...
 
 script:
-  - go test -v github.com/omines/eurodnsgo/...
+  - go test -v -cover github.com/omines/eurodnsgo/...
