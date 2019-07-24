@@ -1,7 +1,7 @@
 `language: go
 
 go:
-  - 1.12.x
+  - tip
 
 git:
   depth: 1
@@ -13,6 +13,5 @@ install:
 script:
   - go test -v -cover github.com/omines/eurodnsgo/...
 
-# Small experiment with travis behavior
 after_success:
   - bash <(curl -s https://codecov.io/bash)
